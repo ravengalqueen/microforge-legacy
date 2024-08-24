@@ -26,12 +26,12 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.*;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
-//import org.reactfx.Subscription;
 import org.slf4j.*;
 import org.fxmisc.richtext.*;
 
 import java.io.*;
 import java.lang.reflect.Array;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,6 +40,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static javafx.scene.input.KeyCode.QUOTE;
+
 
 public class main extends Application {
     private final static Logger logger = LoggerFactory.getLogger(main.class);
@@ -47,7 +49,7 @@ public class main extends Application {
 
     private String name = "Microforge";
     private String fileMenuName = "File";
-    private String version = "preAlpha 0.0.1b";
+    private String version = "preAlpha 0.0.2";
     private String newFileButtonString = "Ignore";
     private String newSaveString = "Save";
     private String newReturnButtons = "Return";
@@ -73,6 +75,7 @@ public class main extends Application {
     private String newFileString = "Are you sure you want to make a new File?\n" +
             "you have unsaved changes";
     BooleanProperty iC = new SimpleBooleanProperty(true);
+    BooleanProperty aP = new SimpleBooleanProperty(true);
     private Boolean hasSaved = false;
     private Boolean hasChanged = false;
     private Boolean settingsOpen = false;
@@ -93,6 +96,8 @@ public class main extends Application {
     private static ChoiceBox langChoice;
     private static ChoiceBox themeChoice;
     private static ChoiceBox fontChoice;
+    File unsavedfile = new File("~/.unsaved/last.txt");
+    File unsavedfilewin = new File("\\.unsaved\\last.txt");
     IntegerProperty fontsize = new SimpleIntegerProperty(13);
     private static String initialCodeString = "initial code";
      File themes = new File("src/main/resources/themes");
@@ -120,10 +125,13 @@ public class main extends Application {
         Platform.setImplicitExit(false);
         primaryStage.setMinHeight(500);
         primaryStage.setMinWidth(600);
+        if (!unsavedfile.exists()){
+
+        }
         primaryStage.setOnCloseRequest(event -> {
             if (hasChanged == true && hasSaved == false) {
 
-                BorderPane leavePane = new BorderPane();
+               /* BorderPane leavePane = new BorderPane();
                 leavePane.setBottom(createButtonBox());
                 Stage leaveDialog = new Stage();
                 leaveDialog.setResizable(false);
@@ -161,7 +169,13 @@ public class main extends Application {
                     hasSaved = true;
                     primaryStage.close();
                 });
-                leaveDialog.showAndWait();
+                leaveDialog.showAndWait();*/
+                String last = mainCodeArea.getText();
+                try (PrintWriter out = new PrintWriter("unsaved.txt")) {
+                    out.println(last);
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
 
@@ -236,6 +250,7 @@ public class main extends Application {
                         mainCodeArea.replaceText("");
                     }
                     newDialog.hide();
+
                 });
                 newDialog.showAndWait();
             }
@@ -247,6 +262,16 @@ public class main extends Application {
                 preferencesFx();
             }
         });
+
+       /*
+        //TODO: finish this thing
+        File unsavedfolder = new File("~/.unsaved");
+        File unsavedfolderwin = new File(".\\.unsaved");
+
+        if (!unsavedfolder.exists() && !unsavedfolderwin.exists()){
+            unsavedfolder.mkdir();
+            unsavedfolderwin.mkdir();
+        }*/
     }
 
     public void preferencesFx() {
@@ -259,6 +284,7 @@ public class main extends Application {
                 PreferencesFx.of(main.class,
                         Category.of("Main",
                                 Setting.of("Initial Code", iC),
+                                Setting.of("Autopair", aP),
                                 Setting.of("Font", fontItems, font),
                                 Setting.of("Theme", themeItems, theme),
                                 Setting.of("Font size", fontsize, 2, 40)
@@ -315,13 +341,39 @@ public class main extends Application {
         });
 
         final Pattern whiteSpace = Pattern.compile("\\B\\s+");
-        mainCodeArea.addEventHandler(KeyEvent.KEY_PRESSED, KE ->
+        mainCodeArea.addEventHandler(KeyEvent.KEY_PRESSED, (KeyEvent KE) ->
         {
             if (KE.getCode() == KeyCode.ENTER) {
                 int caretPosition = mainCodeArea.getCaretPosition();
                 int currentParagraph = mainCodeArea.getCurrentParagraph();
                 Matcher m0 = whiteSpace.matcher(mainCodeArea.getParagraph(currentParagraph - 1).getSegments().get(0));
                 if (m0.find()) Platform.runLater(() -> mainCodeArea.insertText(caretPosition, m0.group()));
+            }
+        });
+        //AutoPair
+        mainCodeArea.addEventHandler(KeyEvent.KEY_TYPED, (KeyEvent KE) -> {
+            if (aP.get() == true) {
+                switch (KE.getCharacter()) {
+                    case "(": {
+                        autoPair(")", mainCodeArea);
+                        break;
+                    }
+                    case "\"": {
+                        autoPair("\"", mainCodeArea);
+                        break;
+                    }
+                    case "\'": {
+                        autoPair("\'", mainCodeArea);
+                        break;
+                    }
+                    case "{": {
+                        autoPair("}", mainCodeArea);
+                        break;
+                    }
+                    case "[": {
+                        autoPair("]", mainCodeArea);
+                    }
+                }
             }
         });
 
@@ -338,6 +390,10 @@ public class main extends Application {
         scrollPane.setFitToWidth(true);
         scrollPane.setId("scrollPane");
         return scrollPane;
+    }
+    public static void autoPair(String rC, CodeArea codeArea){
+        codeArea.insertText(codeArea.getCaretPosition(), rC);
+        codeArea.moveTo(codeArea.getCaretPosition()-1);
     }
 
     private Node createButtonBox() {

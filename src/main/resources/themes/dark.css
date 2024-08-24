@@ -86,8 +86,12 @@
 -fx-background-color:#292929;
 -fx-fill:#4a4a4a;
 }
-.main-code-area .text:selected{
-    -fx-background-color: #505050;
+.main-code-area .selection{
+    -fx-fill: #505050;
+
+}
+#mainCodeArea .selection{
+    -rtfx-background-color: #505050;
 }
 .settingsPane{
 -fx-background-color:#292929;

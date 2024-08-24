@@ -4,7 +4,8 @@ module com.raven.microforge {
     requires org.fxmisc.richtext;
     requires com.google.gson;
     requires com.dlsc.preferencesfx;
- //   requires reactfx;
+    //requires reactfx;
+    //   requires reactfx;
 
     exports com.raven.microforge;
 }
