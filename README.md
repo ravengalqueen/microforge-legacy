@@ -1,5 +1,4 @@
 # Microforge
-⚠️This is no longer maintained, this is just kept here for archive purposes⚠️
 Microforge is an alternative to the arduino IDE
 
 ## Install
